@@ -7,9 +7,10 @@ class DataParser:
     def __init__(self, mode, F2I={}):
         self.sequences, self.labels = self.read_data(mode)
         self.F2I = F2I if F2I \
-        else {f: i for i, f in enumerate(list(sorted(set([char for seq in self.sequences for char in seq]))))}
+            else {f: i for i, f in enumerate(list(sorted(set([char for seq in self.sequences for char in seq]))))}
         self.I2F = {i: f for f, i in self.F2I.items()}
         self.mode = mode
+        self.convert_to_indexes()
 
     @staticmethod
     def read_data(mode):
@@ -25,18 +26,10 @@ class DataParser:
                 labels.append(int(parsed[1]))
         return sequences, labels
 
-    @staticmethod
-    def convert_to_one_hot(index, vec_size):
-        one_hot = np.zeros(vec_size)
-        one_hot[index] = 1
-        return one_hot
-
-    def create_embeddings(self):
-        vocab_size = len(self.F2I)
-        converted = []
+    def convert_to_indexes(self):
         for sequence in self.sequences:
-            converted.append(self.convert_to_one_hot(self.F2I[char], vocab_size) for char in sequence)
-        return converted
+            for index, char in enumerate(sequence):
+                sequence[index] = self.F2I[char]
 
     @staticmethod
     def tensor_conversion(data):
@@ -45,7 +38,7 @@ class DataParser:
         return ret
 
     def data_loader(self, batch_size=1, shuffle=True):
-        sequences = self.tensor_conversion(self.create_embeddings())
+        sequences = self.tensor_conversion(self.sequences)
         labels = self.tensor_conversion(self.labels)
         return DataLoader(TensorDataset(sequences, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
             else DataLoader(TensorDataset(sequences), batch_size, shuffle=shuffle)

@@ -2,6 +2,7 @@ import time
 import torch
 import torch.nn as nn
 from DataUtils import DataParser
+from Model import Model
 
 
 def calc_batch_accuracy(predictions, labels):
@@ -74,8 +75,10 @@ def acceptor():
     F2I = train_set.get_F2I()
     dev_set = DataParser("dev", F2I)
     batch_size = 1
-
-    # iterate_model(model, train.data_loader(batch_size), dev.data_loader(batch_size))
+    sequence_dim = 300
+    hidden_dim = 100
+    model = Model(20, len(F2I), sequence_dim, hidden_dim, 2)
+    iterate_model(model, train_set.data_loader(batch_size), dev_set.data_loader(batch_size))
 
 
 if __name__ == "__main__":
