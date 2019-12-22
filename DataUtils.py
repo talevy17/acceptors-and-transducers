@@ -4,9 +4,10 @@ from torch.utils.data import DataLoader, TensorDataset
 
 
 class DataParser:
-    def __init__(self, mode):
+    def __init__(self, mode, F2I={}):
         self.sequences, self.labels = self.read_data(mode)
-        self.F2I = {f: i for i, f in enumerate(list(sorted(set([char for seq in self.sequences for char in seq]))))}
+        self.F2I = F2I if F2I \
+        else {f: i for i, f in enumerate(list(sorted(set([char for seq in self.sequences for char in seq]))))}
         self.I2F = {i: f for f, i in self.F2I.items()}
         self.mode = mode
 
@@ -48,3 +49,9 @@ class DataParser:
         labels = self.tensor_conversion(self.labels)
         return DataLoader(TensorDataset(sequences, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
             else DataLoader(TensorDataset(sequences), batch_size, shuffle=shuffle)
+
+    def get_F2I(self):
+        return self.F2I
+
+    def get_I2F(self):
+        return self.I2F
