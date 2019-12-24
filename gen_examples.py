@@ -1,10 +1,17 @@
 import random
 
-import rstr as rstr
+import rstr
+from xeger import Xeger
 
 
 def generate_word(reg_exp):
-    word = rstr.xeger(reg_exp)
+    limit = 25
+    word = Xeger(limit=limit)
+    word = word.xeger(reg_exp)
+    while len(word) >100:
+        limit = limit -2
+        word = Xeger(limit=limit)
+        word = word.xeger(reg_exp)
     return word
 
 def generate_words(num_of_words,file_name,regex):
@@ -41,10 +48,10 @@ def generate_train_dev_test(num_of_words,file_name,regexes, isTest=False):
 
 if __name__ == "__main__":
 
-    positive_regex =(r"[1-9]+a+[1-9]+b+[1-9]+c+[1-9]+d+[1-9]+")
-    negative_regex = (r"[1-9]+a+[1-9]+c+[1-9]+b+[1-9]+d+[1-9]+")
-    #generate_words(500,'pos_examples',positive_regex)
-    #generate_words(500,'neg_examples',negative_regex)
+    positive_regex =(r'[1-9]+a+[1-9]+b+[1-9]+c+[1-9]+d+[1-9]+')
+    negative_regex = (r'[1-9]+a+[1-9]+c+[1-9]+b+[1-9]+d+[1-9]+')
+    generate_words(500,'pos_examples',positive_regex)
+    generate_words(500,'neg_examples',negative_regex)
     regexes = [negative_regex,positive_regex]
     generate_train_dev_test(500,'dev', regexes, isTest=False)
     generate_train_dev_test(500,'train', regexes, isTest=False)
