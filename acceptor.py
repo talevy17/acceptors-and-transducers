@@ -22,7 +22,7 @@ def train(model, loader, optimizer, criterion, epoch):
     print(f'Epoch: {epoch + 1:02} | Starting Training...')
     for index, batch in enumerate(loader):
         optimizer.zero_grad()
-        predictions = model(batch[0]).squeeze(1)
+        predictions = model(batch[0].squeeze(1))
         loss = criterion(predictions, batch[1])
         acc = calc_batch_accuracy(predictions, batch[1])
         loss.backward()
@@ -40,7 +40,7 @@ def evaluate(model, loader, criterion, epoch):
     model.eval()
     with torch.no_grad():
         for index, batch in enumerate(loader):
-            predictions = model(batch[0]).squeeze(1)
+            predictions = model(batch[0].squeeze(1))
             loss = criterion(predictions, batch[1])
             acc = calc_batch_accuracy(predictions, batch[1])
             epoch_loss += loss.item()
@@ -75,9 +75,11 @@ def acceptor():
     F2I = train_set.get_F2I()
     dev_set = DataParser("dev", F2I)
     batch_size = 1
-    sequence_dim = 300
     hidden_dim = 100
-    model = Model(20, len(F2I), sequence_dim, hidden_dim, 2)
+    vocab_size = len(F2I)
+    sequence_dim = train_set.sequence_dim
+    embedding_dim = 20
+    model = Model(vocab_size, embedding_dim, sequence_dim, hidden_dim, 2, batch_size)
     iterate_model(model, train_set.data_loader(batch_size), dev_set.data_loader(batch_size))
 
 
