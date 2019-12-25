@@ -8,7 +8,7 @@ from Model import Model
 def calc_batch_accuracy(predictions, labels):
     correct = wrong = 0
     for pred, label in zip(predictions, labels):
-        if (pred > 0 and label == 1) or (pred >= 0 and label == 0):
+        if (pred > 0 and label == 1) or (pred <= 0 and label == -1):
             correct += 1
         else:
             wrong += 1
