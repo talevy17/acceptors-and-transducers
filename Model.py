@@ -9,17 +9,13 @@ class Model(nn.Module):
         self.batch_size = batch_size
         self.hidden_dim = hidden_dim
         self.sequence_dim = sequence_dim
+        torch.manual_seed(3)
         self.embed = nn.Embedding(vocab_size, embedding_dim)
+        nn.init.uniform_(self.embed.weight, -1.0, 1.0)
         self.lstm = nn.LSTM(embedding_dim, sequence_dim)
-        self.non_linear = nn.Sequential(nn.Linear(sequence_dim, hidden_dim), nn.Tanh())
+        self.non_linear = nn.Sequential(nn.Linear(sequence_dim, hidden_dim), nn.Dropout(), nn.ReLU())
         self.linear = nn.Linear(hidden_dim, output_dim)
         self.softmax = nn.Softmax(dim=1)
-
-    # def forward(self, sequence):
-    #     data, _ = self.lstm(sequence.view(1, -1, self.sequence_dim))
-    #     data = self.non_linear(data)
-    #     data = self.linear(data)
-    #     return self.softmax(data)
 
     def forward(self, sequence, batch_size=None):
         pred = self.embed(sequence)
@@ -29,5 +25,5 @@ class Model(nn.Module):
         output, (final_hidden_state, final_cell_state) = self.lstm(pred, (h_0, c_0))
         pred = self.non_linear(final_hidden_state[-1])
         pred = self.linear(pred)
-        return self.softmax(pred)
+        return pred
 

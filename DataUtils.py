@@ -50,14 +50,14 @@ class DataParser:
         return np.asarray(embedded)
 
     @staticmethod
-    def tensor_conversion(data):
+    def tensor_conversion(data, type):
         ret = torch.from_numpy((np.asarray(data)))
-        ret = ret.type(torch.long)
+        ret = ret.type(type)
         return ret
 
     def data_loader(self, batch_size=1, shuffle=True):
-        sequences = self.tensor_conversion(self.sequences)
-        labels = self.tensor_conversion(self.labels)
+        sequences = self.tensor_conversion(self.sequences, torch.long)
+        labels = self.tensor_conversion(self.labels, torch.float)
         return DataLoader(TensorDataset(sequences, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
             else DataLoader(TensorDataset(sequences), batch_size, shuffle=shuffle)
 

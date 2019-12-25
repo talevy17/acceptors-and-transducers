@@ -8,7 +8,7 @@ from Model import Model
 def calc_batch_accuracy(predictions, labels):
     correct = wrong = 0
     for pred, label in zip(predictions, labels):
-        if pred.argmax() == label:
+        if (pred > 0 and label == 1) or (pred >= 0 and label == 0):
             correct += 1
         else:
             wrong += 1
@@ -23,7 +23,7 @@ def train(model, loader, optimizer, criterion, epoch):
     for index, batch in enumerate(loader):
         optimizer.zero_grad()
         predictions = model(batch[0].squeeze(1))
-        loss = criterion(predictions, batch[1])
+        loss = criterion(predictions[0], batch[1])
         acc = calc_batch_accuracy(predictions, batch[1])
         loss.backward()
         optimizer.step()
@@ -41,7 +41,7 @@ def evaluate(model, loader, criterion, epoch):
     with torch.no_grad():
         for index, batch in enumerate(loader):
             predictions = model(batch[0].squeeze(1))
-            loss = criterion(predictions, batch[1])
+            loss = criterion(predictions[0], batch[1])
             acc = calc_batch_accuracy(predictions, batch[1])
             epoch_loss += loss.item()
             epoch_acc += acc
@@ -58,7 +58,7 @@ def time_for_epoch(start, end):
 
 def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.01):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.MultiLabelSoftMarginLoss()
+    criterion = nn.MSELoss()
     for epoch in range(epochs):
         start_time = time.time()
         train_loss, train_acc = train(model, train_loader, optimizer, criterion, epoch)
@@ -75,11 +75,11 @@ def acceptor():
     F2I = train_set.get_F2I()
     dev_set = DataParser("dev", F2I)
     batch_size = 1
-    hidden_dim = 100
+    hidden_dim = 64
     vocab_size = len(F2I)
-    sequence_dim = train_set.sequence_dim
-    embedding_dim = 20
-    model = Model(vocab_size, embedding_dim, sequence_dim, hidden_dim, 2, batch_size)
+    sequence_dim = 64
+    embedding_dim = 5
+    model = Model(vocab_size, embedding_dim, sequence_dim, hidden_dim, 1, batch_size)
     iterate_model(model, train_set.data_loader(batch_size), dev_set.data_loader(batch_size))
 
 
