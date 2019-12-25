@@ -37,19 +37,6 @@ class DataParser:
                 self.sequences[index].append(self.F2I['0'])
 
     @staticmethod
-    def convert_to_one_hot(index, size):
-        ret = np.zeros(size, dtype=np.int)
-        ret[index] = 1
-        return np.asarray([int(val) for val in ret])
-
-    def embed(self):
-        embedded = []
-        size = len(self.F2I)
-        for sequence in self.sequences:
-            embedded.append(np.asarray([self.convert_to_one_hot(index, size) for index in sequence]))
-        return np.asarray(embedded)
-
-    @staticmethod
     def tensor_conversion(data, type):
         ret = torch.from_numpy((np.asarray(data)))
         ret = ret.type(type)
