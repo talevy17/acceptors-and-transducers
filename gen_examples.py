@@ -18,7 +18,7 @@ def generate_words(num_of_words, file_name, regex):
     with open('./Data/{0}'.format(file_name), mode='w') as file:
         for i in range(num_of_words):
             word = generate_word(regex)
-            # check if the word wasnt before
+            # check if the word wasn't before
             if word in temp_words:
                 i = i-1
                 continue
