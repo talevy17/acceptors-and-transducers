@@ -32,9 +32,6 @@ class DataParser:
                 sequence[index] = self.F2I[char]
             if self.sequence_dim < len(sequence):
                 self.sequence_dim = len(sequence)
-        for index in range(len(self.sequences)):
-            while len(self.sequences[index]) < self.sequence_dim:
-                self.sequences[index].append(self.F2I['0'])
 
     @staticmethod
     def tensor_conversion(data, type):
@@ -42,17 +39,26 @@ class DataParser:
         ret = ret.type(type)
         return ret
 
+    def one_hot(self, index):
+        ret = np.zeros(len(self.F2I))
+        ret[index] = int(1)
+        return torch.from_numpy(ret).reshape(1, -1).type(torch.float)
+
+    def encode(self, sequence):
+        return torch.cat([self.one_hot(index) for index in sequence]).type(torch.float)
+
+    def encoder(self):
+        return [self.encode(sequence) for sequence in self.sequences]
+
     def data_loader(self, batch_size=1, shuffle=True):
         sequences = self.tensor_conversion(self.sequences, torch.long)
-        labels = self.tensor_conversion(self.labels, torch.float)
+        labels = self.tensor_conversion(self.labels, torch.long)
         return DataLoader(TensorDataset(sequences, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
             else DataLoader(TensorDataset(sequences), batch_size, shuffle=shuffle)
 
     @staticmethod
     def create_dict(sequences):
-        f2i = {f: i for i, f in enumerate(list(sorted(set([char for seq in sequences for char in seq]))))}
-        f2i['0'] = len(f2i)
-        return f2i
+        return {f: i for i, f in enumerate(list(sorted(set([char for seq in sequences for char in seq]))))}
 
     def get_F2I(self):
         return self.F2I
@@ -62,3 +68,6 @@ class DataParser:
 
     def get_I2F(self):
         return self.I2F
+
+    def get_labels(self):
+        return self.labels

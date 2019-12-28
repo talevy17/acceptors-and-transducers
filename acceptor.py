@@ -8,7 +8,7 @@ from Model import Model
 def calc_batch_accuracy(predictions, labels):
     correct = wrong = 0
     for pred, label in zip(predictions, labels):
-        if (pred > 0 and label == 1) or (pred <= 0 and label == -1):
+        if int(torch.argmax(pred)) == int(label):
             correct += 1
         else:
             wrong += 1
@@ -18,35 +18,41 @@ def calc_batch_accuracy(predictions, labels):
 def train(model, loader, optimizer, criterion, epoch):
     epoch_loss = 0
     epoch_acc = 0
+    data, labels = loader
     model.train()
     print(f'Epoch: {epoch + 1:02} | Starting Training...')
-    for index, batch in enumerate(loader):
+    for sequence, label in zip(data, labels):
         optimizer.zero_grad()
-        predictions = model(batch[0].squeeze(1))
-        loss = criterion(predictions[0], batch[1])
-        acc = calc_batch_accuracy(predictions, batch[1])
+        predictions = model(sequence.squeeze(1))
+        label = torch.tensor([label])
+        predictions = predictions.view(1, -1)
+        loss = criterion(predictions, label)
+        acc = calc_batch_accuracy(predictions, label)
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
         epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Training')
-    return epoch_loss / len(loader), epoch_acc / len(loader)
+    return epoch_loss / len(data), epoch_acc / len(data), model
 
 
 def evaluate(model, loader, criterion, epoch):
     epoch_loss = 0
     epoch_acc = 0
+    data, labels = loader
     print(f'Epoch: {epoch + 1:02} | Starting Evaluation...')
     model.eval()
     with torch.no_grad():
-        for index, batch in enumerate(loader):
-            predictions = model(batch[0].squeeze(1))
-            loss = criterion(predictions[0], batch[1])
-            acc = calc_batch_accuracy(predictions, batch[1])
+        for sequence, label in zip(data, labels):
+            predictions = model(sequence.squeeze(1))
+            label = torch.tensor([label])
+            predictions = predictions.view(1, -1)
+            loss = criterion(predictions, label)
+            acc = calc_batch_accuracy(predictions, label)
             epoch_loss += loss.item()
             epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
-    return epoch_loss / len(loader), epoch_acc / len(loader)
+    return epoch_loss / len(data), epoch_acc / len(data)
 
 
 def time_for_epoch(start, end):
@@ -56,12 +62,12 @@ def time_for_epoch(start, end):
     return minutes, seconds
 
 
-def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.01):
+def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.MSELoss()
+    criterion = nn.CrossEntropyLoss()
     for epoch in range(epochs):
         start_time = time.time()
-        train_loss, train_acc = train(model, train_loader, optimizer, criterion, epoch)
+        train_loss, train_acc, model = train(model, train_loader, optimizer, criterion, epoch)
         val_loss, val_acc = evaluate(model, val_loader, criterion, epoch)
         end_time = time.time()
         epoch_mins, epoch_secs = time_for_epoch(start_time, end_time)
@@ -75,12 +81,13 @@ def acceptor():
     F2I = train_set.get_F2I()
     dev_set = DataParser("dev", F2I)
     batch_size = 1
-    hidden_dim = 64
-    vocab_size = len(F2I)
-    sequence_dim = 64
-    embedding_dim = 5
-    model = Model(vocab_size, embedding_dim, sequence_dim, hidden_dim, 1, batch_size)
-    iterate_model(model, train_set.data_loader(batch_size), dev_set.data_loader(batch_size))
+    hidden_dim = 100
+    sequence_dim = 50
+    embedding_dim = len(F2I)
+    model = Model(embedding_dim, sequence_dim, hidden_dim, 2, batch_size)
+    data, labels = train_set.encoder(), train_set.get_labels()
+    dev_data, dev_labels = dev_set.encoder(), dev_set.get_labels()
+    iterate_model(model, (data, labels), (dev_data, dev_labels))
 
 
 if __name__ == "__main__":
