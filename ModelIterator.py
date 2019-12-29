@@ -4,13 +4,16 @@ import torch.nn as nn
 
 
 def calc_batch_accuracy(predictions, labels):
-    correct = wrong = 0
+    total = 0
     for pred, label in zip(predictions, labels):
-        if int(torch.argmax(pred)) == int(label):
-            correct += 1
-        else:
-            wrong += 1
-    return correct / (correct + wrong)
+        correct = wrong = 0
+        for word_pred, word_label in zip(pred, label):
+            if int(torch.argmax(word_pred)) == int(word_label):
+                correct += 1
+            else:
+                wrong += 1
+        total += correct / (correct + wrong)
+    return total / len(predictions)
 
 
 def train(model, loader, optimizer, criterion, epoch):
@@ -21,8 +24,8 @@ def train(model, loader, optimizer, criterion, epoch):
     for sequence, label in loader:
         optimizer.zero_grad()
         predictions = model(sequence.squeeze(1))
-        loss = criterion(predictions, label)
-        acc = calc_batch_accuracy(predictions, label)
+        loss = criterion(predictions.permute(1, 2, 0), label)
+        acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label)
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
@@ -39,8 +42,8 @@ def evaluate(model, loader, criterion, epoch):
     with torch.no_grad():
         for sequence, label in loader:
             predictions = model(sequence.squeeze(1))
-            loss = criterion(predictions, label)
-            acc = calc_batch_accuracy(predictions, label)
+            loss = criterion(predictions.permute(1, 2, 0), label)
+            acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label)
             epoch_loss += loss.item()
             epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')

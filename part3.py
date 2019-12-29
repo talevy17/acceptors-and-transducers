@@ -11,10 +11,11 @@ def check_model():
     embedding_dim = 300
     hidden_1 = 1000
     hidden_2 = 300
+    batch_size = 1000
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="train", F2I=F2I, L2I=L2I)
-    model = Model(embedding_dim, vocab_size, hidden_1, hidden_2, output_dim, 1)
-    model = iterate_model(model, train_data.data_loader(), dev_data.data_loader())
+    model = Model(embedding_dim, vocab_size, hidden_1, hidden_2, output_dim, batch_size)
+    model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size))
 
 
 if __name__ == "__main__":
