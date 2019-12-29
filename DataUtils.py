@@ -1,9 +1,10 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
+import copy
 
 
-class DataParser:
+class ExperimentsParser:
     def __init__(self, mode, F2I={}):
         self.sequences, self.labels = self.read_data(mode)
         self.F2I = F2I if F2I else self.create_dict(self.sequences)
@@ -30,8 +31,6 @@ class DataParser:
         for sequence in self.sequences:
             for index, char in enumerate(sequence):
                 sequence[index] = self.F2I[char]
-            if self.sequence_dim < len(sequence):
-                self.sequence_dim = len(sequence)
 
     @staticmethod
     def tensor_conversion(data, type):
@@ -71,3 +70,102 @@ class DataParser:
 
     def get_labels(self):
         return self.labels
+
+
+NONE = '*NONE*'
+
+
+class DataReader:
+    def __init__(self, data_type='pos', mode="train", F2I={}, L2I={}, to_lower=True):
+        with open("./data/{0}/{1}".format(data_type, mode), 'r') as file:
+            data = file.readlines()
+        self.mode = mode
+        self.sentence_len = 0
+        self.sentences = []
+        self.labels = []
+        self.parse_sentences(data, data_type == 'pos', to_lower, mode)
+        self.F2I = F2I if F2I else self.create_dict(self.sentences)
+        self.L2I = L2I if L2I else self.create_dict(self.labels)
+        self.convert_to_indexes()
+        self.sentence_padding()
+
+    def convert_to_indexes(self):
+        for sentence, labels in zip(self.sentences, self.labels):
+            for index, word in enumerate(sentence):
+                if word in self.F2I:
+                    sentence[index] = self.F2I[word]
+                else:
+                    sentence[index] = self.F2I[NONE]
+            if not self.mode == "test":
+                for index, label in enumerate(labels):
+                    if label in self.L2I:
+                        labels[index] = self.L2I[label]
+                    else:
+                        labels[index] = self.L2I[NONE]
+
+    def parse_sentences(self, data, is_pos, to_lower, mode):
+        # parse by spaces if post, if ner parse by tab.
+        delimiter = ' ' if is_pos else '\t'
+        current_sentence = []
+        current_labels = []
+        for row in data:
+            row_spitted = row.split('\n')
+            row_spitted = row_spitted[0].split(delimiter)
+            word = row_spitted[0]
+            if word != '':
+                # convert all chars to lower case.
+                if to_lower:
+                    word = word.lower()
+                if not mode == 'test':
+                    label = row_spitted[1]
+                    current_labels.append(label)
+                current_sentence.append(word)
+            else:
+                if len(current_sentence) > self.sentence_len:
+                    self.sentence_len = len(current_sentence)
+                self.sentences.append(copy.deepcopy(current_sentence))
+                self.labels.append(copy.deepcopy(current_labels))
+                current_sentence.clear()
+                current_labels.clear()
+
+    def get_sentences(self):
+        return self.sentences
+
+    def get_labels(self):
+        return self.labels
+
+    def get_f2i(self):
+        return self.F2I
+
+    def get_l2i(self):
+        return self.L2I
+
+    @staticmethod
+    def create_dict(data):
+        data_dict = {f: i for i, f in enumerate(list(sorted(set([w for row in data for w in row]))))}
+        data_dict[NONE] = len(data_dict)
+        return data_dict
+
+    def get_i2f(self):
+        return {i: l for l, i in self.F2I.items()}
+
+    def get_i2l(self):
+        return {i: l for l, i in self.L2I.items()}
+
+    @staticmethod
+    def tensor_conversion(data):
+        ret = torch.from_numpy((np.asarray(data)))
+        ret = ret.type(torch.long)
+        return ret
+
+    def data_loader(self, batch_size=1, shuffle=True):
+        windows = self.tensor_conversion(self.sentences)
+        labels = self.tensor_conversion(self.labels)
+        return DataLoader(TensorDataset(windows, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
+            else DataLoader(TensorDataset(windows), batch_size, shuffle=shuffle)
+
+    def sentence_padding(self):
+        for sentence, label in zip(self.sentences, self.labels):
+            while len(sentence) < self.sentence_len:
+                sentence.append(self.F2I[NONE])
+                label.append(self.L2I[NONE])

@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch
 
 
-class Model(nn.Module):
+class SimpleLstm(nn.Module):
     def __init__(self, embedding_dim, sequence_dim, hidden_dim, output_dim, batch_size):
-        super(Model, self).__init__()
+        super(SimpleLstm, self).__init__()
         self.batch_size = batch_size
         self.sequence_dim = sequence_dim
         self.lstm = nn.LSTM(embedding_dim, sequence_dim)

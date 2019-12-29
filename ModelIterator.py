@@ -1,8 +1,6 @@
 import time
 import torch
 import torch.nn as nn
-from DataUtils import DataParser
-from Model import Model
 
 
 def calc_batch_accuracy(predictions, labels):
@@ -18,14 +16,11 @@ def calc_batch_accuracy(predictions, labels):
 def train(model, loader, optimizer, criterion, epoch):
     epoch_loss = 0
     epoch_acc = 0
-    data, labels = loader
     model.train()
     print(f'Epoch: {epoch + 1:02} | Starting Training...')
-    for sequence, label in zip(data, labels):
+    for sequence, label in loader:
         optimizer.zero_grad()
         predictions = model(sequence.squeeze(1))
-        label = torch.tensor([label])
-        predictions = predictions.view(1, -1)
         loss = criterion(predictions, label)
         acc = calc_batch_accuracy(predictions, label)
         loss.backward()
@@ -33,26 +28,23 @@ def train(model, loader, optimizer, criterion, epoch):
         epoch_loss += loss.item()
         epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Training')
-    return epoch_loss / len(data), epoch_acc / len(data), model
+    return epoch_loss / len(loader), epoch_acc / len(loader), model
 
 
 def evaluate(model, loader, criterion, epoch):
     epoch_loss = 0
     epoch_acc = 0
-    data, labels = loader
     print(f'Epoch: {epoch + 1:02} | Starting Evaluation...')
     model.eval()
     with torch.no_grad():
-        for sequence, label in zip(data, labels):
+        for sequence, label in loader:
             predictions = model(sequence.squeeze(1))
-            label = torch.tensor([label])
-            predictions = predictions.view(1, -1)
             loss = criterion(predictions, label)
             acc = calc_batch_accuracy(predictions, label)
             epoch_loss += loss.item()
             epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
-    return epoch_loss / len(data), epoch_acc / len(data)
+    return epoch_loss / len(loader), epoch_acc / len(loader)
 
 
 def time_for_epoch(start, end):
@@ -74,21 +66,3 @@ def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.00
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
         print(f'\t Val. Loss: {val_loss:.3f} |  Val. Acc: {val_acc * 100:.2f}%')
-
-
-def acceptor():
-    train_set = DataParser("train")
-    F2I = train_set.get_F2I()
-    dev_set = DataParser("dev", F2I)
-    batch_size = 1
-    hidden_dim = 100
-    sequence_dim = 50
-    embedding_dim = len(F2I)
-    model = Model(embedding_dim, sequence_dim, hidden_dim, 2, batch_size)
-    data, labels = train_set.encoder(), train_set.get_labels()
-    dev_data, dev_labels = dev_set.encoder(), dev_set.get_labels()
-    iterate_model(model, (data, labels), (dev_data, dev_labels))
-
-
-if __name__ == "__main__":
-    acceptor()
