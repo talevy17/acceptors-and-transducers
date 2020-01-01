@@ -29,10 +29,10 @@ class BiLSTM(nn.Module):
 
     def forward(self, sentence):
         embedded = self.embed(sentence)
-        seq_lengths = self.calc_lengths(sentence)
+        # seq_lengths = self.calc_lengths(sentence)
         feed = embedded.permute(1, 0, 2)
-        packed = pack_padded_sequence(feed, seq_lengths, enforce_sorted=False)
-        output, _ = self.lstm(packed)
-        output, _ = pad_packed_sequence(output, padding_value=0, total_length=len(sentence[0]))
+        # packed = pack_padded_sequence(feed, seq_lengths, enforce_sorted=False)
+        output, _ = self.lstm(feed)
+        # output, _ = pad_packed_sequence(output, padding_value=0, total_length=len(sentence[0]))
         pred = self.linear(output)
         return self.softmax(pred)
