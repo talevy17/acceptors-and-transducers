@@ -2,24 +2,27 @@ import time
 import torch
 import torch.nn as nn
 from DataUtils import NONE
+import numpy as np
 
 
-def calc_batch_accuracy(predictions, labels, L2I):
+def calc_batch_accuracy(predictions, labels, I2L):
     total = 0
     for pred, label in zip(predictions, labels):
         correct = wrong = 0
         for word_pred, word_label in zip(pred, label):
-            if int(word_label) == int(L2I[NONE]):
+            string_label = I2L[int(word_label)]
+            if string_label == NONE:
                 break
             if int(torch.argmax(word_pred)) == int(word_label):
-                correct += 1
+                if not string_label == 'O':
+                    correct += 1
             else:
                 wrong += 1
         total += correct / (correct + wrong)
     return total / len(predictions)
 
 
-def train(model, loader, optimizer, criterion, epoch, L2I):
+def train(model, loader, optimizer, criterion, epoch, I2L):
     epoch_loss = 0
     epoch_acc = 0
     model.train()
@@ -28,7 +31,7 @@ def train(model, loader, optimizer, criterion, epoch, L2I):
         optimizer.zero_grad()
         predictions = model(sequence.squeeze(1))
         loss = criterion(predictions.permute(1, 2, 0), label)
-        acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, L2I)
+        acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, I2L)
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
@@ -37,7 +40,7 @@ def train(model, loader, optimizer, criterion, epoch, L2I):
     return epoch_loss / len(loader), epoch_acc / len(loader), model
 
 
-def evaluate(model, loader, criterion, epoch, L2I):
+def evaluate(model, loader, criterion, epoch, I2L):
     epoch_loss = 0
     epoch_acc = 0
     print(f'Epoch: {epoch + 1:02} | Starting Evaluation...')
@@ -46,7 +49,7 @@ def evaluate(model, loader, criterion, epoch, L2I):
         for sequence, label in loader:
             predictions = model(sequence.squeeze(1))
             loss = criterion(predictions.permute(1, 2, 0), label)
-            acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, L2I)
+            acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, I2L)
             epoch_loss += loss.item()
             epoch_acc += acc
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
@@ -60,13 +63,13 @@ def time_for_epoch(start, end):
     return minutes, seconds
 
 
-def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001, L2I={}):
+def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001, I2L={}, ignore_index=np.inf):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=ignore_index) if not ignore_index == np.inf else nn.CrossEntropyLoss()
     for epoch in range(epochs):
         start_time = time.time()
-        train_loss, train_acc, model = train(model, train_loader, optimizer, criterion, epoch, L2I)
-        val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, L2I)
+        train_loss, train_acc, model = train(model, train_loader, optimizer, criterion, epoch, I2L)
+        val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, I2L)
         end_time = time.time()
         epoch_mins, epoch_secs = time_for_epoch(start_time, end_time)
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
