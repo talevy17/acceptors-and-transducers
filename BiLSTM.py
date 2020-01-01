@@ -1,56 +1,38 @@
 import torch.nn as nn
 import torch
-import numpy as np
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from DataUtils import NONE
 
 
 class BiLSTM(nn.Module):
-    def __init__(self, embedding_dim, vocab_size, hidden_dim_1, hidden_dim_2, output_dim, batch_size):
+    def __init__(self, embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I):
         super(BiLSTM, self).__init__()
         self.batch_size = batch_size
-        self.hidden1 = hidden_dim_1
-        self.hidden2 = hidden_dim_2
+        self.F2I = F2I
+        self.hidden = hidden_dim
         torch.manual_seed(3)
         self.embed = nn.Embedding(vocab_size, embedding_dim)
         nn.init.uniform_(self.embed.weight, -1.0, 1.0)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim_1, bidirectional=True, num_layers=2)
-        # self.lstm_f = nn.LSTM(embedding_dim, hidden_dim_1)
-        # self.lstm_b = nn.LSTM(embedding_dim, hidden_dim_1)
-        # self.lstm2_f = nn.LSTM(hidden_dim_1, hidden_dim_2)
-        # self.lstm2_b = nn.LSTM(hidden_dim_1, hidden_dim_2)
-        self.linear = nn.Linear(hidden_dim_1, output_dim)
-        self.softmax = nn.Softmax(dim=1)
-        self.softmax2 = nn.Softmax(dim=0)
-        self.softmax3 = nn.Softmax(dim=2)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True, num_layers=2)
+        self.linear = nn.Linear(2 * hidden_dim, output_dim)
+        self.output_dim = output_dim
+        self.softmax = nn.LogSoftmax(dim=2)
 
-    def init_hidden(self, dim):
-        h_0 = torch.zeros(4, self.batch_size, dim)
-        c_0 = torch.zeros(4, self.batch_size, dim)
-        return h_0, c_0
-
-    @staticmethod
-    def flip_tensor(tensor):
-        return torch.from_numpy(np.flip(tensor.detach().numpy(), 0).copy())
+    def calc_lengths(self, batch):
+        lengths = []
+        for sentence in batch:
+            index = 0
+            while not index == 141 and not int(sentence[index]) == int(self.F2I[NONE]):
+                index += 1
+            lengths.append(index)
+        return lengths
 
     def forward(self, sentence):
         embedded = self.embed(sentence)
+        seq_lengths = self.calc_lengths(sentence)
         feed = embedded.permute(1, 0, 2)
-        hidden = self.init_hidden(self.hidden1)
-        output, (h_f, c_f) = self.lstm(feed, hidden)
-        half = output.shape[-1] // 2
-        pred = output[:, :, :half] + output[:, :, half:]
-        # feed_b = self.flip_tensor(feed_f)
-        # hidden_f = self.init_hidden(self.hidden1)
-        # hidden_b = self.init_hidden(self.hidden1)
-        # output_f, (h_f, c_f) = self.lstm_f(feed_f, hidden_f)
-        # output_b, (h_b, c_b) = self.lstm_b(feed_b, hidden_b)
-        # feed2_f = torch.cat((output_f, output_b))
-        # # feed2_f = output_f + output_b
-        # feed2_b = self.flip_tensor(feed2_f)
-        # hidden2_f = self.init_hidden(self.hidden2)
-        # hidden2_b = self.init_hidden(self.hidden2)
-        # output2_f, (h2_f, c2_f) = self.lstm2_f(feed2_f, hidden2_f)
-        # output2_b, (h2_b, c2_b) = self.lstm2_b(feed2_b, hidden2_b)
-        # pred = torch.cat((output2_f, output2_b))
-        # pred = output2_f + output2_b
-        pred = self.linear(pred)
-        return self.softmax3(pred)
+        packed = pack_padded_sequence(feed, seq_lengths, enforce_sorted=False)
+        output, _ = self.lstm(packed)
+        output, _ = pad_packed_sequence(output, padding_value=0, total_length=len(sentence[0]))
+        pred = self.linear(output)
+        return self.softmax(pred)
