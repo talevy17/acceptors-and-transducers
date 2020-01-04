@@ -228,3 +228,4 @@ class DataReader:
 
     def get_word_dim(self):
         return self.word_len
+
