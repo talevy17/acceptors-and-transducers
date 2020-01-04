@@ -12,7 +12,7 @@ def calc_batch_accuracy(predictions, labels, I2L):
         for word_pred, word_label in zip(pred, label):
             string_label = I2L[int(word_label)]
             if string_label == NONE:
-                break
+                continue
             if int(torch.argmax(word_pred)) == int(word_label):
                 if not string_label == 'O':
                     correct += 1

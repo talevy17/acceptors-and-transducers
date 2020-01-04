@@ -20,23 +20,23 @@ def a():
 
 
 def b():
-    train_data = DataReader(data_type="pos", mode="train", character_based=True)
+    train_data = DataReader(data_type="pos", mode="train")
     F2I = train_data.get_f2i()
     L2I = train_data.get_l2i()
     I2L = train_data.get_i2l()
+    I2F = train_data.get_i2f()
     vocab_size = len(F2I) + 1
     embedding_dim = 300
-    char_dim = len(F2I) + 1
+    char_dim = 15
     hidden_dim = 1000
     batch_size = 20
     output_dim = len(L2I)
-    dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I, character_based=True)
-    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, CHAR_PAD, repr='b',
-                  char_dim=char_dim)
-    # train_loader = train_data.encoder(), train_data.get_labels()
-    # dev_loader = dev_data.encoder(), dev_data.get_labels()
+    dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
+    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr='b',
+                  letter_dict=train_data.get_char_dict(), I2F=I2F,
+                  word_len=train_data.get_max_word_len())
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,
-                          ignore_index=L2I[CHAR_PAD])
+                          ignore_index=L2I[NONE])
 
 
 def create_dictionaries(prefix_size, suffix_size, sentences, i2f):
@@ -68,4 +68,4 @@ def c():
 
 
 if __name__ == "__main__":
-    c()
+    b()
