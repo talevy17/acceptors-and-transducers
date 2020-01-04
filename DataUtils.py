@@ -124,13 +124,13 @@ class DataReader:
         return torch.from_numpy(ret).reshape(1, -1).type(torch.float)
 
     def encode_word(self, word):
-        return torch.cat([self.one_hot(index) for index in word]).type(torch.float)
+        return torch.cat([self.one_hot(index) for index in word]).unsqueeze(0).type(torch.float)
 
-    def encode(self, sentence):
-        return torch.cat([self.encode_word(word) for word in sentence]).type(torch.float)
+    def encode_sentence(self, sentence):
+        return torch.cat([self.encode_word(word) for word in sentence]).unsqueeze(0).type(torch.float)
 
     def encoder(self):
-        return [self.encode(sentence) for sentence in self.sentences]
+        return [self.encode_sentence(sentence) for sentence in self.sentences]
 
     def convert_chars_to_indexes(self):
         for sentence, labels in zip(self.sentences, self.labels):

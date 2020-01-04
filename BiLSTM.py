@@ -9,13 +9,14 @@ class BiLSTM(nn.Module):
         self.NONE = NONE
         self.batch_size = batch_size
         self.F2I = F2I
+        self.repr = repr
         self.hidden = hidden_dim
-        if repr == 'a':
-            torch.manual_seed(3)
-            self.embed = nn.Embedding(vocab_size, embedding_dim)
-            nn.init.uniform_(self.embed.weight, -1.0, 1.0)
-        elif repr == 'b':
-            self.embed = nn.LSTM(word_dim, embedding_dim)
+        dimension = word_dim if word_dim else embedding_dim
+        torch.manual_seed(3)
+        self.embed = nn.Embedding(vocab_size, dimension)
+        nn.init.uniform_(self.embed.weight, -1.0, 1.0)
+        if repr == 'b':
+            self.lstm_embedding = nn.LSTM(word_dim, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True, num_layers=2)
         self.linear = nn.Linear(2 * hidden_dim, output_dim)
         self.output_dim = output_dim
@@ -35,6 +36,8 @@ class BiLSTM(nn.Module):
 
     def forward(self, sentence):
         embedded = self.embed(sentence)
+        if self.repr == 'b':
+            embedded = self.lstm_embedding(embedded)
         # seq_lengths = self.calc_lengths(sentence)
         feed = embedded.permute(1, 0, 2)
         # packed = pack_padded_sequence(feed, seq_lengths, enforce_sorted=False)
