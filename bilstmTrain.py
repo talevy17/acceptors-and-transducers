@@ -25,16 +25,18 @@ def b():
     L2I = train_data.get_l2i()
     I2L = train_data.get_i2l()
     I2F = train_data.get_i2f()
-    vocab_size = len(F2I) + 1
-    embedding_dim = 300
-    char_dim = 15
-    hidden_dim = 1000
-    batch_size = 20
+
+    letter_dict = train_data.get_char_dict()
+    vocab_size = len(letter_dict)
+    embedding_dim = 150
+    hidden_dim = 400
+    batch_size = 100
+    char_dim = 30
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
     model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr='b',
-                  letter_dict=train_data.get_char_dict(), I2F=I2F,
-                  word_len=train_data.get_max_word_len())
+                  letter_dict=letter_dict, I2F=I2F,
+                  word_len=train_data.get_max_word_len(), char_dim=char_dim)
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,
                           ignore_index=L2I[NONE])
 
