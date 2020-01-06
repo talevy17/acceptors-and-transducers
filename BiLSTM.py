@@ -1,13 +1,12 @@
 import torch.nn as nn
 import torch
-import numpy as np
+from DataUtils import NONE, UNKNOWN, CHAR_PAD
 
 
 class BiLSTM(nn.Module):
-    def __init__(self, embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr,
+    def __init__(self, embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr,
                  I2F={}, PREF2I={}, SUFF2I={}, letter_dict={}, word_len=None, char_dim=None):
         super(BiLSTM, self).__init__()
-        self.NONE = NONE
         self.embedding_dim = embedding_dim
         self.batch_size = batch_size
         self.F2I = F2I
@@ -15,11 +14,11 @@ class BiLSTM(nn.Module):
         self.hidden = hidden_dim
         if not repr == 'b':
             torch.manual_seed(3)
-            self.embed = nn.Embedding(vocab_size, embedding_dim)
+            self.embed = nn.Embedding(vocab_size, embedding_dim, padding_idx=F2I[NONE])
             nn.init.uniform_(self.embed.weight, -1.0, 1.0)
         if repr == 'b' or repr == 'd':
             torch.manual_seed(3)
-            self.char_embed = nn.Embedding(vocab_size, char_dim)
+            self.char_embed = nn.Embedding(vocab_size, char_dim, padding_idx=letter_dict[CHAR_PAD])
             nn.init.uniform_(self.char_embed.weight, -1.0, 1.0)
             self.lstm_embedding = nn.LSTM(char_dim, embedding_dim, batch_first=True)
             self.I2F = I2F
@@ -43,13 +42,13 @@ class BiLSTM(nn.Module):
     @staticmethod
     def prepare_list(str_list, max_length, mapper, padding):
         idx_list = []
-        for s in str_list:
-            if str_list == padding:
+        for s in str_list[:max_length]:
+            if str_list == NONE:
                 break
             if s in mapper:
                 idx_list.append(mapper[s])
             else:
-                idx_list.append(mapper[padding])
+                idx_list.append(mapper[UNKNOWN])
         while len(idx_list) < max_length:
             idx_list.append(mapper[padding])
         return idx_list
@@ -61,7 +60,7 @@ class BiLSTM(nn.Module):
         letter_input = torch.LongTensor(len(word_input), self.word_len)
         for i, idx in enumerate(word_input):
             word = self.I2F[int(idx)]
-            letter_input[i] = torch.LongTensor(self.prepare_list(word, self.word_len, self.letter_dict, self.NONE))
+            letter_input[i] = torch.LongTensor(self.prepare_list(word, self.word_len, self.letter_dict, CHAR_PAD))
         return letter_input
 
     def make_prefix_suffix_input(self, sentences):
@@ -76,11 +75,11 @@ class BiLSTM(nn.Module):
                 if prefix in self.PRE2I:
                     prefix_input[i][j] = self.PRE2I[prefix]
                 else:
-                    prefix_input[i][j] = self.PRE2I[self.NONE[:3]]
+                    prefix_input[i][j] = self.PRE2I[NONE[:3]]
                 if suffix in self.SUF2I:
                     suffix_input[i][j] = self.SUF2I[suffix]
                 else:
-                    suffix_input[i][j] = self.SUF2I[self.NONE[-3:]]
+                    suffix_input[i][j] = self.SUF2I[NONE[-3:]]
         return prefix_input, suffix_input
 
     def forward(self, sentences):

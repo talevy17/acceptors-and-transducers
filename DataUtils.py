@@ -64,6 +64,8 @@ NONE = '*NONE*'
 
 CHAR_PAD = '**'
 
+UNKNOWN = '*UNKNOWN*'
+
 
 class DataReader:
     def __init__(self, data_type='pos', mode="train", F2I={}, L2I={}, to_lower=True):
@@ -75,11 +77,11 @@ class DataReader:
         self.sentences = []
         self.labels = []
         self.parse_sentences(data, data_type == 'pos', to_lower, mode)
-        self.F2I = F2I if F2I else self.create_dict(self.sentences, NONE)
-        self.L2I = L2I if L2I else self.create_dict(self.labels, NONE)
-        self.letter_dict = self.create_characterized_dict(self.sentences, NONE)
+        self.F2I = F2I if F2I else self.create_dict(self.sentences)
+        self.L2I = L2I if L2I else self.create_dict(self.labels)
+        self.letter_dict = self.create_characterized_dict(self.sentences)
         self.convert_to_indexes()
-        self.sentence_padding(NONE)
+        self.sentence_padding()
 
     def get_max_word_len(self):
         max_len = 0
@@ -89,17 +91,19 @@ class DataReader:
         return max_len
 
     @staticmethod
-    def create_characterized_dict(data, skip):
+    def create_characterized_dict(data):
         data_dict = {f: i for i, f in enumerate(list(sorted(set([char for row in data for w in row for char in w]))))}
-        data_dict[skip] = len(data_dict)
+        data_dict[list(data_dict.keys())[0]] = len(data_dict)
+        data_dict[CHAR_PAD] = 0
+        data_dict[UNKNOWN] = len(data_dict)
         return data_dict
 
-    def convert_labels_batch(self, labels, skip):
+    def convert_labels_batch(self, labels):
         for index, label in enumerate(labels):
             if label in self.L2I:
                 labels[index] = self.L2I[label]
             else:
-                labels[index] = self.L2I[skip]
+                labels[index] = self.L2I[UNKNOWN]
 
     def convert_to_indexes(self):
         for sentence, labels in zip(self.sentences, self.labels):
@@ -107,9 +111,9 @@ class DataReader:
                 if word in self.F2I:
                     sentence[index] = self.F2I[word]
                 else:
-                    sentence[index] = self.F2I[NONE]
+                    sentence[index] = self.F2I[UNKNOWN]
             if not self.mode == "test":
-                self.convert_labels_batch(labels, NONE)
+                self.convert_labels_batch(labels)
 
     def parse_sentences(self, data, is_pos, to_lower, mode):
         # parse by spaces if post, if ner parse by tab.
@@ -149,9 +153,11 @@ class DataReader:
         return self.L2I
 
     @staticmethod
-    def create_dict(data, skip):
+    def create_dict(data):
         data_dict = {f: i for i, f in enumerate(list(sorted(set([w for row in data for w in row]))))}
-        data_dict[skip] = len(data_dict)
+        data_dict[list(data_dict.keys())[0]] = len(data_dict)
+        data_dict[NONE] = 0
+        data_dict[UNKNOWN] = len(data_dict)
         return data_dict
 
     def get_i2f(self):
@@ -172,9 +178,9 @@ class DataReader:
         return DataLoader(TensorDataset(windows, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
             else DataLoader(TensorDataset(windows), batch_size, shuffle=shuffle)
 
-    def sentence_padding(self, skip):
-        word_index = self.F2I[skip]
-        label_index = self.L2I[skip]
+    def sentence_padding(self):
+        word_index = self.F2I[NONE]
+        label_index = self.L2I[NONE]
         for sentence, label in zip(self.sentences, self.labels):
             while len(sentence) < self.sentence_len:
                 sentence.append(word_index)

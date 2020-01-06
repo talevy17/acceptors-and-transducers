@@ -1,6 +1,6 @@
 from BiLSTM import BiLSTM as Model
 from ModelIterator import iterate_model
-from DataUtils import DataReader, NONE, CHAR_PAD
+from DataUtils import DataReader, NONE
 
 
 def a():
@@ -14,7 +14,7 @@ def a():
     batch_size = 20
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
-    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr='a')
+    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr='a')
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,
                           ignore_index=L2I[NONE])
 
@@ -30,13 +30,13 @@ def b():
     vocab_size = len(letter_dict)
     embedding_dim = 150
     hidden_dim = 400
-    batch_size = 100
+    batch_size = 50
     char_dim = 30
+    max_len = 8
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
-    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr='b',
-                  letter_dict=letter_dict, I2F=I2F,
-                  word_len=train_data.get_max_word_len(), char_dim=char_dim)
+    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr='b',
+                  letter_dict=letter_dict, I2F=I2F, word_len=max_len, char_dim=char_dim)
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,
                           ignore_index=L2I[NONE])
 
@@ -63,7 +63,7 @@ def c():
     batch_size = 20
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
-    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, NONE, repr='c',
+    model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr='c',
                   PREF2I=PRE2I, SUFF2I=SUF2I, I2F=I2F)
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,
                           ignore_index=L2I[NONE])
