@@ -48,7 +48,7 @@ def evaluate(model, loader, criterion, epoch, I2L, mode, batch_size):
     export_tracker = math.floor(500 / batch_size)
     file = open('./Data/results/{0}.csv'.format(mode), 'w+')
     writer = csv.writer(file)
-    writer.writerows(["sentences", "loss", "accuracy"])
+    writer.writerow(["epoch", "sentences", "loss", "accuracy"])
     print(f'Epoch: {epoch + 1:02} | Starting Evaluation...')
     model.eval()
     with torch.no_grad():
@@ -60,7 +60,7 @@ def evaluate(model, loader, criterion, epoch, I2L, mode, batch_size):
             epoch_acc += acc
             if index % export_tracker == 0 and not index == 0:
                 elapsed = export_tracker * index
-                writer.writerows([str(elapsed * batch_size), str(epoch_loss / elapsed), str(epoch_acc / elapsed)])
+                writer.writerow([str(epoch), str(elapsed * batch_size), str(epoch_loss / index), str(epoch_acc / index)])
     file.close()
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
     return epoch_loss / len(loader), epoch_acc / len(loader)
