@@ -105,3 +105,10 @@ class BiLSTM(nn.Module):
         pred = self.linear(output)
         return self.softmax(pred)
 
+    def save(self, path):
+        torch.save(self, path)
+
+    @staticmethod
+    def load(path):
+        return torch.load(path)
+

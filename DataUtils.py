@@ -68,9 +68,13 @@ UNKNOWN = '*UNKNOWN*'
 
 
 class DataReader:
-    def __init__(self, data_type='pos', mode="train", F2I={}, L2I={}, to_lower=True):
-        with open("./data/{0}/{1}".format(data_type, mode), 'r') as file:
-            data = file.readlines()
+    def __init__(self, data_type='pos', mode="train", F2I={}, L2I={}, to_lower=True, train_file=None):
+        if train_file is None:
+            with open("./Data/{0}/{1}".format(data_type, mode), 'r') as file:
+                data = file.readlines()
+        else:
+            with open(train_file, 'r') as file:
+                data = file.readlines()
         self.mode = mode
         self.sentence_len = 0
         self.word_len = 0

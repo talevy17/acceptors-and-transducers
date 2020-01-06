@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 from DataUtils import NONE
 import numpy as np
+import csv
+import math
 
 
 def calc_batch_accuracy(predictions, labels, I2L):
@@ -40,18 +42,26 @@ def train(model, loader, optimizer, criterion, epoch, I2L):
     return epoch_loss / len(loader), epoch_acc / len(loader), model
 
 
-def evaluate(model, loader, criterion, epoch, I2L):
+def evaluate(model, loader, criterion, epoch, I2L, mode, batch_size):
     epoch_loss = 0
     epoch_acc = 0
+    export_tracker = math.floor(500 / batch_size)
+    file = open('./Data/results/{0}.csv'.format(mode), 'w+')
+    writer = csv.writer(file)
+    writer.writerows(["sentences", "loss", "accuracy"])
     print(f'Epoch: {epoch + 1:02} | Starting Evaluation...')
     model.eval()
     with torch.no_grad():
-        for sequence, label in loader:
+        for index, (sequence, label) in enumerate(loader):
             predictions = model(sequence.squeeze(1))
             loss = criterion(predictions.permute(1, 2, 0), label)
             acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, I2L)
             epoch_loss += loss.item()
             epoch_acc += acc
+            if index % export_tracker == 0 and not index == 0:
+                elapsed = export_tracker * index
+                writer.writerows([str(elapsed * batch_size), str(epoch_loss / elapsed), str(epoch_acc / elapsed)])
+    file.close()
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
     return epoch_loss / len(loader), epoch_acc / len(loader)
 
@@ -63,13 +73,14 @@ def time_for_epoch(start, end):
     return minutes, seconds
 
 
-def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001, I2L={}, ignore_index=np.inf):
+def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001, I2L={},
+                  ignore_index=np.inf, mode='a-pos', batch_size=1):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss(ignore_index=ignore_index) if not ignore_index == np.inf else nn.CrossEntropyLoss()
     for epoch in range(epochs):
         start_time = time.time()
         train_loss, train_acc, model = train(model, train_loader, optimizer, criterion, epoch, I2L)
-        val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, I2L)
+        val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, I2L, mode, batch_size)
         end_time = time.time()
         epoch_mins, epoch_secs = time_for_epoch(start_time, end_time)
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
