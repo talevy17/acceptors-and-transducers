@@ -5,6 +5,7 @@ from DataUtils import NONE
 import numpy as np
 import csv
 import math
+import copy
 
 
 def calc_batch_accuracy(predictions, labels, I2L):
@@ -46,6 +47,7 @@ def evaluate(model, loader, criterion, epoch, I2L, mode, batch_size):
     epoch_loss = 0
     epoch_acc = 0
     export_tracker = math.floor(500 / batch_size)
+    init_export_tracker = copy.deepcopy(export_tracker)
     file = open('./Data/results/{0}.csv'.format(mode), 'w+')
     writer = csv.writer(file)
     writer.writerow(["epoch", "sentences", "loss", "accuracy"])
@@ -58,9 +60,9 @@ def evaluate(model, loader, criterion, epoch, I2L, mode, batch_size):
             acc = calc_batch_accuracy(predictions.permute(1, 0, 2), label, I2L)
             epoch_loss += loss.item()
             epoch_acc += acc
-            if index % export_tracker == 0 and not index == 0:
-                elapsed = export_tracker * index
-                writer.writerow([str(epoch), str(elapsed * batch_size), str(epoch_loss / index), str(epoch_acc / index)])
+            if index == export_tracker:
+                writer.writerow([str(epoch), str(export_tracker * batch_size), str(epoch_loss / index), str(epoch_acc / index)])
+                export_tracker += init_export_tracker
     file.close()
     print(f'Epoch: {epoch + 1:02} | Finished Evaluation')
     return epoch_loss / len(loader), epoch_acc / len(loader)
