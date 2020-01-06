@@ -75,11 +75,11 @@ class BiLSTM(nn.Module):
                 if prefix in self.PRE2I:
                     prefix_input[i][j] = self.PRE2I[prefix]
                 else:
-                    prefix_input[i][j] = self.PRE2I[NONE[:3]]
+                    prefix_input[i][j] = self.PRE2I[UNKNOWN[:3]]
                 if suffix in self.SUF2I:
                     suffix_input[i][j] = self.SUF2I[suffix]
                 else:
-                    suffix_input[i][j] = self.SUF2I[NONE[-3:]]
+                    suffix_input[i][j] = self.SUF2I[UNKNOWN[-3:]]
         return prefix_input, suffix_input
 
     def forward(self, sentences):

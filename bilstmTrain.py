@@ -35,6 +35,8 @@ def b():
     max_len = 8
     output_dim = len(L2I)
     dev_data = DataReader(data_type="pos", mode="dev", F2I=F2I, L2I=L2I)
+    test_data = DataReader(data_type="pos", mode="test", F2I=F2I, L2I=L2I)
+    test_data.data_loader(20)
     model = Model(embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr='b',
                   letter_dict=letter_dict, I2F=I2F, word_len=max_len, char_dim=char_dim)
     model = iterate_model(model, train_data.data_loader(batch_size), dev_data.data_loader(batch_size), I2L=I2L,

@@ -174,9 +174,11 @@ class DataReader:
 
     def data_loader(self, batch_size=1, shuffle=True):
         windows = self.tensor_conversion(self.sentences)
-        labels = self.tensor_conversion(self.labels)
-        return DataLoader(TensorDataset(windows, labels), batch_size, shuffle=shuffle) if not self.mode == "test" \
-            else DataLoader(TensorDataset(windows), batch_size, shuffle=shuffle)
+        if not self.mode == 'test':
+            labels = self.tensor_conversion(self.labels)
+            return DataLoader(TensorDataset(windows, labels), batch_size, shuffle=shuffle)
+        else:
+            return DataLoader(TensorDataset(windows), batch_size, shuffle=shuffle)
 
     def sentence_padding(self):
         word_index = self.F2I[NONE]
