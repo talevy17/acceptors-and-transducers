@@ -11,6 +11,8 @@ import copy
 def export_batch_prediction(predictions, batch, I2L, I2F, file):
     for pred, sentence in zip(predictions, batch):
         for word_pred, word in zip(pred, sentence):
+            if I2F[int(word)] == NONE:
+                break
             file.write(f"{I2F[int(word)]} {I2L[int(torch.argmax(word_pred))]}\n")
         file.write('\n')
 
