@@ -5,11 +5,14 @@ from DataUtils import NONE, UNKNOWN, CHAR_PAD
 
 class BiLSTM(nn.Module):
     def __init__(self, embedding_dim, vocab_size, hidden_dim, output_dim, batch_size, F2I, repr,
-                 I2F={}, PREF2I={}, SUFF2I={}, letter_dict={}, word_len=None, char_dim=None):
+                 I2F={}, PREF2I={}, SUFF2I={}, letter_dict={}, word_len=None, char_dim=None, I2L={}, L2I={}):
         super(BiLSTM, self).__init__()
         self.embedding_dim = embedding_dim
         self.batch_size = batch_size
         self.F2I = F2I
+        self.I2F = I2F
+        self.I2L = I2L
+        self.L2I = L2I
         self.repr = repr
         self.hidden = hidden_dim
         if not repr == 'b':
@@ -21,13 +24,11 @@ class BiLSTM(nn.Module):
             self.char_embed = nn.Embedding(vocab_size, char_dim, padding_idx=letter_dict[CHAR_PAD])
             nn.init.uniform_(self.char_embed.weight, -1.0, 1.0)
             self.lstm_embedding = nn.LSTM(char_dim, embedding_dim, batch_first=True)
-            self.I2F = I2F
             self.letter_dict = letter_dict
             self.word_len = word_len
         elif repr == 'c':
             self.PRE2I = PREF2I
             self.SUF2I = SUFF2I
-            self.I2F = I2F
             self.embed_prefix = nn.Embedding(len(PREF2I), embedding_dim)
             nn.init.uniform_(self.embed_prefix.weight, -1.0, 1.0)
             self.embed_suffix = nn.Embedding(len(SUFF2I), embedding_dim)
@@ -75,11 +76,11 @@ class BiLSTM(nn.Module):
                 if prefix in self.PRE2I:
                     prefix_input[i][j] = self.PRE2I[prefix]
                 else:
-                    prefix_input[i][j] = self.PRE2I[UNKNOWN[:3]]
+                    prefix_input[i][j] = self.PRE2I[UNKNOWN]
                 if suffix in self.SUF2I:
                     suffix_input[i][j] = self.SUF2I[suffix]
                 else:
-                    suffix_input[i][j] = self.SUF2I[UNKNOWN[-3:]]
+                    suffix_input[i][j] = self.SUF2I[UNKNOWN]
         return prefix_input, suffix_input
 
     def forward(self, sentences):
@@ -112,3 +113,14 @@ class BiLSTM(nn.Module):
     def load(path):
         return torch.load(path)
 
+    def get_i2f(self):
+        return self.I2F
+
+    def get_i2l(self):
+        return self.I2L
+
+    def get_f2i(self):
+        return self.F2I
+
+    def get_l2i(self):
+        return self.L2I

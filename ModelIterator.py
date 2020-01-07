@@ -8,6 +8,22 @@ import math
 import copy
 
 
+def export_batch_prediction(predictions, batch, I2L, I2F, file):
+    for pred, sentence in zip(predictions, batch):
+        for word_pred, word in zip(pred, sentence):
+            file.write(f"{I2F[int(word)]} {I2L[int(torch.argmax(word_pred))]}\n")
+        file.write('\n')
+
+
+def predict(model, loader, I2L, I2F, data_type):
+    with open('./Data/results/test4.{0}'.format(data_type), 'w+') as file:
+        model.eval()
+        with torch.no_grad():
+            for index, batch in enumerate(loader):
+                predictions = model(batch[0].squeeze(1))
+                export_batch_prediction(predictions.permute(1, 0, 2), batch[0], I2L, I2F, file)
+
+
 def calc_batch_accuracy(predictions, labels, I2L):
     total = 0
     for pred, label in zip(predictions, labels):
@@ -75,16 +91,20 @@ def time_for_epoch(start, end):
     return minutes, seconds
 
 
-def iterate_model(model, train_loader, val_loader, epochs=10, learning_rate=0.001, I2L={},
+def iterate_model(model, train_loader, val_loader=None, epochs=10, learning_rate=0.001, I2L={},
                   ignore_index=np.inf, mode='a-pos', batch_size=1):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss(ignore_index=ignore_index) if not ignore_index == np.inf else nn.CrossEntropyLoss()
     for epoch in range(epochs):
         start_time = time.time()
         train_loss, train_acc, model = train(model, train_loader, optimizer, criterion, epoch, I2L)
-        val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, I2L, mode, batch_size)
+        if val_loader is not None:
+            val_loss, val_acc = evaluate(model, val_loader, criterion, epoch, I2L, mode, batch_size)
         end_time = time.time()
         epoch_mins, epoch_secs = time_for_epoch(start_time, end_time)
         print(f'Epoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-        print(f'\t Val. Loss: {val_loss:.3f} |  Val. Acc: {val_acc * 100:.2f}%')
+        if val_loader is not None:
+            print(f'\t Val. Loss: {val_loss:.3f} |  Val. Acc: {val_acc * 100:.2f}%')
+    return model
+

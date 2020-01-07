@@ -64,7 +64,7 @@ NONE = '*NONE*'
 
 CHAR_PAD = '**'
 
-UNKNOWN = '*UNKNOWN*'
+UNKNOWN = 'UNK'
 
 
 class DataReader:
