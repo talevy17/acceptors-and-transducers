@@ -21,7 +21,7 @@ class BiLSTM(nn.Module):
             nn.init.uniform_(self.embed.weight, -1.0, 1.0)
         if repr == 'b' or repr == 'd':
             torch.manual_seed(3)
-            self.char_embed = nn.Embedding(vocab_size, char_dim, padding_idx=letter_dict[CHAR_PAD])
+            self.char_embed = nn.Embedding(len(letter_dict), char_dim, padding_idx=letter_dict[CHAR_PAD])
             nn.init.uniform_(self.char_embed.weight, -1.0, 1.0)
             self.lstm_embedding = nn.LSTM(char_dim, embedding_dim, batch_first=True)
             self.letter_dict = letter_dict

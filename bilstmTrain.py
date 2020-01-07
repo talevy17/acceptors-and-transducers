@@ -36,7 +36,7 @@ def b_d(choice, train_file=None, model_file=None, dev=True):
     I2L = train_data.get_i2l()
     I2F = train_data.get_i2f()
     letter_dict = train_data.get_char_dict()
-    vocab_size = len(letter_dict)
+    vocab_size = len(F2I)
     embedding_dim = 150
     hidden_dim = 400
     batch_size = 50
