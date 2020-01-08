@@ -15,7 +15,7 @@ class ExperimentsParser:
 
     @staticmethod
     def read_data(mode):
-        with open('./Data/{0}'.format(mode), 'r') as file:
+        with open('./{0}'.format(mode), 'r') as file:
             data = file.readlines()
         sequences = []
         labels = []

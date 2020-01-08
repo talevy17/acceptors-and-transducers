@@ -5,6 +5,8 @@ import time
 import torch
 import torch.nn as nn
 
+from gen_examples import generate_train_dev_test
+
 
 def calc_batch_accuracy(predictions, labels):
     correct = wrong = 0
@@ -92,4 +94,9 @@ def acceptor():
 
 
 if __name__ == "__main__":
+    positive_regex = r'[1-9]+a+[1-9]+b+[1-9]+c+[1-9]+d+[1-9]+'
+    negative_regex = r'[1-9]+a+[1-9]+c+[1-9]+b+[1-9]+d+[1-9]+'
+    regexes = [negative_regex, positive_regex]
+    generate_train_dev_test(3000, 'dev', regexes, is_test=False)
+    generate_train_dev_test(15000, 'train', regexes, is_test=False)
     acceptor()

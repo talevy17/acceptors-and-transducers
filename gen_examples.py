@@ -15,7 +15,7 @@ def generate_word(reg_exp):
 
 def generate_words(num_of_words, file_name, regex):
     temp_words = []
-    with open('./Data/{0}'.format(file_name), mode='w') as file:
+    with open('./{0}'.format(file_name), mode='w') as file:
         for i in range(num_of_words):
             word = generate_word(regex)
             # check if the word wasn't before
@@ -29,7 +29,7 @@ def generate_words(num_of_words, file_name, regex):
 
 def generate_train_dev_test(num_of_words, file_name, regexes, is_test=False):
     temp_words =[]
-    with open('./Data/{0}'.format(file_name), mode='w') as file:
+    with open('./{0}'.format(file_name), mode='w') as file:
         for i in range(num_of_words):
             label = random.randint(0,len(regexes)-1)
             regex = regexes[label]
